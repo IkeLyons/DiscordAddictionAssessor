@@ -1,0 +1,11 @@
+{
+  "name": "AddictionAssessor",
+  "version": "0.0.0",
+  "description": "Discord bot meant to give a leaderboard of time spent in voice channels",
+  "main": "index.js",
+  "author": "Ike Lyons",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^13.8.0"
+  }
+}
