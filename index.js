@@ -1,5 +1,19 @@
 const { Client, Intents } = require("discord.js");
-const { token } = require("./config.json");
+const DBClient = require("pg");
+const { token, dbUser, dbHost, dbDatabase, dbPassword, dbPort } = require("./config.json");
+
+const pool = new DBClient.Pool({
+	user: dbUser,
+	host: dbHost,
+	database: dbDatabase,
+	password: dbPassword,
+	port: dbPort,
+});
+pool.connect();
+pool.query('SELECT NOW()', (err, res) => {
+	console.log(err, res);
+	pool.end();
+});
 
 const client = new Client({ intents: [Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_INTEGRATIONS] });
 
@@ -26,7 +40,7 @@ client.on("interactionCreate", async (interaction) => {
 
 client.on('voiceStateUpdate', (oldState, newState) => {
 	// console.log(oldState);
-	// console.log(newState);
+	console.log(newState.member.user.id);
 	if (newState.channelId === null) {
 		console.log('user left channel', oldState.channelID);
 	}
