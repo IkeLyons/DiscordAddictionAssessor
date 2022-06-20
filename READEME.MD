@@ -5,4 +5,5 @@ Setup Instructions
 3. Install yarn
 4. Create database with info corresponding to config.json
 5. yarn install
-6. 
+6. node createDB.js
+7. node index.js

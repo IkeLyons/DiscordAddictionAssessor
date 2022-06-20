@@ -17,20 +17,58 @@ client.once("ready", () => {
 	console.log("Ready!");
 });
 
+// {userid:[timeSpentInMilliseconds, timeJoined, serverId]}
+const currentlyConnected = {};
+
+function deleteUser(userId, serverId) {
+	if (currentlyConnected[userId] != undefined) {
+		const currentTime = new Date();
+		const timeSpent = Math.abs(currentlyConnected[userId][1] - currentTime) / (1000 * 60 * 60);
+		const currentTotal = currentlyConnected[userId][0];
+		const updatedTime = (Math.abs(currentTotal + timeSpent));
+		pool.query(`UPDATE time_spent SET hours=${updatedTime} WHERE(user_id=${userId} AND server_id=${serverId})`, (err) => {
+			console.log(err);
+		});
+		delete currentlyConnected[userId];
+	}
+}
+
+async function refreshUser(userId, serverId) {
+	if (currentlyConnected[userId] != undefined) {
+		const currentTime = new Date();
+		const timeSpent = Math.abs(currentlyConnected[userId][1] - currentTime) / (1000 * 60 * 60);
+		const currentTotal = currentlyConnected[userId][0];
+		const updatedTime = (Math.abs(currentTotal + timeSpent));
+		const response = await pool.query(`UPDATE time_spent SET hours=${updatedTime} WHERE(user_id=${userId} AND server_id=${serverId})`);
+		currentlyConnected[userId] = [updatedTime, currentTime, serverId];
+		return response;
+	}
+}
+
+
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isCommand()) return;
 	// console.log(interaction);
 	const { commandName } = interaction;
 
 	if (commandName === "leaderboard") {
+		// Refresh for everyone currently connected
+		for (const user in currentlyConnected) {
+			const serverid = currentlyConnected[user][2];
+			await refreshUser(user, serverid);
+		}
+
 		let leaderboard = "";
 		const response = await pool.query(`SELECT user_id, server_id, hours FROM time_spent WHERE(server_id=${interaction.guild.id})ORDER BY hours DESC LIMIT 5`);
+		let i = 0;
 		for (const user of response.rows) {
+			i++;
+			console.log(user.hours);
 			const seconds = Math.floor((user.hours * 60 * 60) % 60);
 			const minutes = Math.floor((user.hours * 60) % 60);
 			const hours = Math.floor(user.hours);
 			const username = await interaction.guild.members.fetch(user.user_id);
-			leaderboard = leaderboard + `#1:${username}\t\t\t${hours} hours,\t${minutes} minutes,\t${seconds} seconds\n`;
+			leaderboard = leaderboard + `#${i}:${username}\t\t\t${hours} hours,\t${minutes} minutes,\t${seconds} seconds\n`;
 		}
 
 		await interaction.reply("heres the board!\n" + leaderboard);
@@ -44,23 +82,11 @@ client.on("interactionCreate", async (interaction) => {
 	}
 });
 
-
-// {userid:[timeSpentInMilliseconds, timeJoined]}
-const currentlyConnected = {};
-
 client.on('voiceStateUpdate', (oldState, newState) => {
 	const currentTime = new Date();
 	if (newState.channelId === null) {
 		console.log('user left channel', oldState.channelID);
-		if (currentlyConnected[newState.member.user.id] != undefined) {
-			const timeSpent = Math.abs(currentlyConnected[newState.member.user.id][1] - currentTime) / (1000 * 60 * 60);
-			const currentTotal = currentlyConnected[newState.member.user.id][0];
-			const updatedTime = (Math.abs(currentTotal + timeSpent));
-			pool.query(`UPDATE time_spent SET hours=${updatedTime} WHERE(user_id=${newState.member.user.id} AND server_id=${newState.guild.id})`, (err) => {
-				console.log(err);
-			});
-			delete currentlyConnected[newState.member.user.id];
-		}
+		deleteUser(newState.member.user.id, newState.guild.id);
 	}
 	else if (oldState.channelId === null) {
 		console.log('user joined channel', newState.channelID);
@@ -72,7 +98,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 				});
 			}
 			else if (res.rowCount === 1) {
-				currentlyConnected[newState.member.user.id] = [res.rows[0].hours, currentTime];
+				currentlyConnected[newState.member.user.id] = [res.rows[0].hours, currentTime, newState.guild.id];
 			}
 			else {
 				console.log('Duplicate Entry, Something went wrong');
