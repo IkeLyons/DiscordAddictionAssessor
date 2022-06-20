@@ -52,13 +52,15 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 	const currentTime = new Date();
 	if (newState.channelId === null) {
 		console.log('user left channel', oldState.channelID);
-		const timeSpent = Math.abs(currentlyConnected[newState.member.user.id][1] - currentTime) / (1000 * 60 * 60);
-		const currentTotal = currentlyConnected[newState.member.user.id][0];
-		const updatedTime = (Math.abs(currentTotal + timeSpent));
-		pool.query(`UPDATE time_spent SET hours=${updatedTime} WHERE(user_id=${newState.member.user.id} AND server_id=${newState.guild.id})`, (err) => {
-			console.log(err);
-		});
-		delete currentlyConnected[newState.member.user.id];
+		if (currentlyConnected[newState.member.user.id] != undefined) {
+			const timeSpent = Math.abs(currentlyConnected[newState.member.user.id][1] - currentTime) / (1000 * 60 * 60);
+			const currentTotal = currentlyConnected[newState.member.user.id][0];
+			const updatedTime = (Math.abs(currentTotal + timeSpent));
+			pool.query(`UPDATE time_spent SET hours=${updatedTime} WHERE(user_id=${newState.member.user.id} AND server_id=${newState.guild.id})`, (err) => {
+				console.log(err);
+			});
+			delete currentlyConnected[newState.member.user.id];
+		}
 	}
 	else if (oldState.channelId === null) {
 		console.log('user joined channel', newState.channelID);
