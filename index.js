@@ -20,6 +20,25 @@ client.once("ready", () => {
 // {userid:[timeSpentInMilliseconds, timeJoined, serverId]}
 const currentlyConnected = {};
 
+function addUser(userId, serverId) {
+	const currentTime = new Date();
+	pool.query(`SELECT * FROM time_spent WHERE(user_id=${userId} AND server_id=${serverId})`, (err, res) => {
+		console.log(err);
+		if (res.rowCount === 0) {
+			pool.query(`INSERT INTO time_spent (user_id, server_id, hours) VALUES (${userId}, ${serverId}, 0)`, (err2, res2) => {
+				console.log(err2, res2);
+			});
+		}
+		else if (res.rowCount === 1) {
+			currentlyConnected[userId] = [res.rows[0].hours, currentTime, serverId];
+		}
+		else {
+			console.log('Duplicate Entry, Something went wrong');
+			return;
+		}
+	});
+}
+
 function deleteUser(userId, serverId) {
 	if (currentlyConnected[userId] != undefined) {
 		const currentTime = new Date();
@@ -83,28 +102,23 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
-	const currentTime = new Date();
 	if (newState.channelId === null) {
 		console.log('user left channel', oldState.channelID);
 		deleteUser(newState.member.user.id, newState.guild.id);
 	}
 	else if (oldState.channelId === null) {
 		console.log('user joined channel', newState.channelID);
-		pool.query(`SELECT * FROM time_spent WHERE(user_id=${newState.member.user.id} AND server_id=${newState.guild.id})`, (err, res) => {
-			console.log(err);
-			if (res.rowCount === 0) {
-				pool.query(`INSERT INTO time_spent (user_id, server_id, hours) VALUES (${newState.member.user.id}, ${newState.guild.id}, 0)`, (err2, res2) => {
-					console.log(err2, res2);
-				});
-			}
-			else if (res.rowCount === 1) {
-				currentlyConnected[newState.member.user.id] = [res.rows[0].hours, currentTime, newState.guild.id];
-			}
-			else {
-				console.log('Duplicate Entry, Something went wrong');
-				return;
-			}
-		});
+		addUser(newState.member.user.id, newState.guild.id);
+	}
+	else {
+		console.log('user moved channels', oldState.channelID, newState.channelID);
+		if (newState.channelId === newState.guild.afkChannelId) {
+			console.log("moved to afk");
+			deleteUser(newState.member.user.id, newState.guild.id);
+		}
+		else if (!(newState.member.user.id in currentlyConnected)) {
+			addUser(newState.member.user.id, newState.guild.id);
+		}
 	}
 });
 
