@@ -1,5 +1,5 @@
 {
-  "name": "AddictionAssessor",
+  "name": "addiction-assessor",
   "version": "0.0.0",
   "description": "Discord bot meant to give a leaderboard of time spent in voice channels",
   "main": "index.js",

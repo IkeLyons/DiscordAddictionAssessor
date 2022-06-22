@@ -64,6 +64,19 @@ async function refreshUser(userId, serverId) {
 	}
 }
 
+async function getUser(userId, serverId) {
+	const response = await pool.query(`SELECT user_id, server_id, hours FROM time_spent WHERE(user_id=${userId} AND server_id=${serverId})`);
+	let timeSpentString = "";
+	console.log(response);
+	for (const user of response.rows) {
+		const seconds = Math.floor((user.hours * 60 * 60) % 60);
+		const minutes = Math.floor((user.hours * 60) % 60);
+		const hours = Math.floor(user.hours);
+		timeSpentString = `${hours} hours, ${minutes} minutes, and ${seconds} seconds`;
+	}
+	return timeSpentString;
+}
+
 
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isCommand()) return;
@@ -82,7 +95,6 @@ client.on("interactionCreate", async (interaction) => {
 		let i = 0;
 		for (const user of response.rows) {
 			i++;
-			console.log(user.hours);
 			const seconds = Math.floor((user.hours * 60 * 60) % 60);
 			const minutes = Math.floor((user.hours * 60) % 60);
 			const hours = Math.floor(user.hours);
@@ -96,8 +108,9 @@ client.on("interactionCreate", async (interaction) => {
 		await interaction.reply("user");
 	}
 	else if (commandName === "mytime") {
-		console.log("time");
-		await interaction.reply("mytime");
+		await refreshUser(interaction.member.user.id, interaction.guild.id);
+		const timeString = await getUser(interaction.member.user.id, interaction.guild.id);
+		await interaction.reply(`You have spent ${timeString} wasting away in voice calls in this server`);
 	}
 });
 
