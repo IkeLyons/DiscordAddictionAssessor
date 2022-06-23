@@ -67,7 +67,6 @@ async function refreshUser(userId, serverId) {
 async function getUser(userId, serverId) {
 	const response = await pool.query(`SELECT user_id, server_id, hours FROM time_spent WHERE(user_id=${userId} AND server_id=${serverId})`);
 	let timeSpentString = "";
-	console.log(response);
 	for (const user of response.rows) {
 		const seconds = Math.floor((user.hours * 60 * 60) % 60);
 		const minutes = Math.floor((user.hours * 60) % 60);
@@ -77,6 +76,19 @@ async function getUser(userId, serverId) {
 	return timeSpentString;
 }
 
+function getUserFromMention(mention) {
+	if (!mention) return;
+
+	if (mention.startsWith('<@') && mention.endsWith('>')) {
+		mention = mention.slice(2, -1);
+
+		if (mention.startsWith('!')) {
+			mention = mention.slice(1);
+		}
+
+		return mention;
+	}
+}
 
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isCommand()) return;
@@ -105,12 +117,23 @@ client.on("interactionCreate", async (interaction) => {
 		await interaction.reply("heres the board!\n" + leaderboard);
 	}
 	else if (commandName === "time") {
-		await interaction.reply("user");
+		const option = interaction.options.get("username");
+		// console.log(option);
+		// console.log(interaction);
+		// console.log(getUserFromMention(option.value));
+		const inputtedUser = getUserFromMention(option.value);
+		if (!inputtedUser) {
+			await interaction.reply("Please @ mention the user you would like to search");
+			return;
+		}
+		await refreshUser(inputtedUser, interaction.guild.id);
+		const timeText = await getUser(inputtedUser, interaction.guild.id);
+		await interaction.reply(`${option.value} has spent ${timeText} wasting away in this server's voice channels`);
 	}
 	else if (commandName === "mytime") {
 		await refreshUser(interaction.member.user.id, interaction.guild.id);
 		const timeString = await getUser(interaction.member.user.id, interaction.guild.id);
-		await interaction.reply(`You have spent ${timeString} wasting away in voice calls in this server`);
+		await interaction.reply(`You have spent ${timeString} wasting away in this server's voice channels`);
 	}
 });
 
