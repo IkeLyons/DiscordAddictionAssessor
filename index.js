@@ -14,7 +14,7 @@ pool.connect();
 const client = new Client({ intents: [Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_INTEGRATIONS] });
 
 client.once("ready", () => {
-	console.log("Ready!");
+	console.log("Starting up Discord Addiction Assessor!");
 });
 
 // {userid:[timeSpentInMilliseconds, timeJoined, serverId]}
@@ -92,7 +92,6 @@ function getUserFromMention(mention) {
 
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isCommand()) return;
-	// console.log(interaction);
 	const { commandName } = interaction;
 
 	if (commandName === "leaderboard") {
@@ -118,9 +117,6 @@ client.on("interactionCreate", async (interaction) => {
 	}
 	else if (commandName === "time") {
 		const option = interaction.options.get("username");
-		// console.log(option);
-		// console.log(interaction);
-		// console.log(getUserFromMention(option.value));
 		const inputtedUser = getUserFromMention(option.value);
 		if (!inputtedUser) {
 			await interaction.reply("Please @ mention the user you would like to search");
@@ -139,17 +135,17 @@ client.on("interactionCreate", async (interaction) => {
 
 client.on('voiceStateUpdate', (oldState, newState) => {
 	if (newState.channelId === null) {
-		console.log('user left channel', oldState.channelID);
+		// User left a channel
 		deleteUser(newState.member.user.id, newState.guild.id);
 	}
 	else if (oldState.channelId === null) {
-		console.log('user joined channel', newState.channelID);
+		// User joined a channel
 		addUser(newState.member.user.id, newState.guild.id);
 	}
 	else {
-		console.log('user moved channels', oldState.channelID, newState.channelID);
+		// User moved channels
 		if (newState.channelId === newState.guild.afkChannelId) {
-			console.log("moved to afk");
+			// User moved to afk channel
 			deleteUser(newState.member.user.id, newState.guild.id);
 		}
 		else if (!(newState.member.user.id in currentlyConnected)) {
