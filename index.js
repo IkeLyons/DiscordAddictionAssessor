@@ -42,9 +42,7 @@ function addUser(userId, serverId) {
 function deleteUser(userId, serverId) {
 	if (currentlyConnected[userId] != undefined) {
 		const currentTime = new Date();
-		const timeSpent = Math.abs(currentlyConnected[userId][1] - currentTime) / (1000 * 60 * 60);
-		const currentTotal = currentlyConnected[userId][0];
-		const updatedTime = (Math.abs(currentTotal + timeSpent));
+		const updatedTime = getTimeSpent(userId, currentTime);
 		pool.query(`UPDATE time_spent SET hours=${updatedTime} WHERE(user_id=${userId} AND server_id=${serverId})`, (err) => {
 			console.log(err);
 		});
@@ -55,9 +53,7 @@ function deleteUser(userId, serverId) {
 async function refreshUser(userId, serverId) {
 	if (currentlyConnected[userId] != undefined) {
 		const currentTime = new Date();
-		const timeSpent = Math.abs(currentlyConnected[userId][1] - currentTime) / (1000 * 60 * 60);
-		const currentTotal = currentlyConnected[userId][0];
-		const updatedTime = (Math.abs(currentTotal + timeSpent));
+		const updatedTime = getTimeSpent(userId, currentTime);	
 		const response = await pool.query(`UPDATE time_spent SET hours=${updatedTime} WHERE(user_id=${userId} AND server_id=${serverId})`);
 		currentlyConnected[userId] = [updatedTime, currentTime, serverId];
 		return response;
@@ -88,6 +84,12 @@ function getUserFromMention(mention) {
 
 		return mention;
 	}
+}
+
+function getTimeSpent(user, currentTime){
+	const timeSpent = Math.abs(currentlyConnected[user][1] - currentTime) / (1000 * 60 * 60);
+	const currentTotal = currentlyConnected[user][0];
+	return Math.abs(currentTotal + timeSpent);
 }
 
 client.on("interactionCreate", async (interaction) => {
