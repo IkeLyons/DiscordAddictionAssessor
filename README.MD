@@ -3,7 +3,8 @@ Setup Instructions
 1. Install npm
 2. Install postgresql
 3. Install yarn
-4. create a config.json with fields:
+4. Setup the DB:
+Config created with the following fields:
 ```
 {
   "token": "",
@@ -15,6 +16,13 @@ Setup Instructions
   "dbPassword": "",
   "dbPort": ""
 }
+```
+Open Postgres
+`sudo -u postgres psql postgres`
+Create the user and database specified above:
+```
+CREATE ROLE myuser LOGIN PASSWORD 'mypass';
+CREATE DATABASE mydatabase WITH OWNER = myuser;
 ```
 5. yarn install
 6. node createDB.js
