@@ -4,7 +4,9 @@ Setup Instructions
 2. Install postgresql
 3. Install yarn
 4. Setup the DB:
-Config created with the following fields:
+* Config created with the following fields:
+
+
 ```
 {
   "token": "",
@@ -17,9 +19,13 @@ Config created with the following fields:
   "dbPort": ""
 }
 ```
-Open Postgres
+* Open Postgres:
+
+
 `sudo -u postgres psql postgres`
-Create the user and database specified above:
+* Create the user and database with fields specified above:
+
+
 ```
 CREATE ROLE myuser LOGIN PASSWORD 'mypass';
 CREATE DATABASE mydatabase WITH OWNER = myuser;
