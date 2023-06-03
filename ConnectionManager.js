@@ -81,14 +81,7 @@ class ConnectionManager {
 	async getLeaderboardResponse(interaction){
 		const response = await this.pool.query(`SELECT user_id, server_id, hours FROM time_spent WHERE(server_id=${interaction.guild.id})ORDER BY hours DESC`);
 		const leaderboardList = await processLeaderboardResponse(response, interaction);
-	
-		let message = ""
-		for (let i = 0; i < 5; i++) {
-			if (i < leaderboardList.length){
-				message = message + leaderboardList[i];	
-			}
-		}
-		return message;
+		return leaderboardList;
 	}
 
 	isUserConnected(userId){

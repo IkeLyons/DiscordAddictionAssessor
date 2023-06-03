@@ -24,6 +24,11 @@ function getUserFromMention(mention) {
 	}
 }
 
+function paginate(array, page_size, page_number) {
+	// human-readable page numbers usually start with 1, so we reduce 1 in the first argument
+	return array.slice((page_number - 1) * page_size, page_number * page_size).join("");
+}
+
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isCommand()) return;
 	const { commandName } = interaction;
@@ -32,9 +37,14 @@ client.on("interactionCreate", async (interaction) => {
 		currentCons.refreshAll();
 
 		const response = await currentCons.getLeaderboardResponse(interaction);
+		paginatedResponse = []
+		for(let i = 1; i*5 <= response.length+5; i++){
+			paginatedResponse.push(paginate(response, 5, i));
+		}
+		console.log(paginatedResponse);
+		console.log(paginatedResponse[0]);
 
-		await interaction.reply("heres the board!\n" + response);
-
+		await interaction.reply("heres the board!\n" + paginatedResponse[0]);
 	}
 	else if (commandName === "time") {
 		const option = interaction.options.get("username");
