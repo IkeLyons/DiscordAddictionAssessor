@@ -96,7 +96,12 @@ async function processLeaderboardResponse(response, interaction){
 		const seconds = Math.floor((user.hours * 59 * 60) % 60);
 		const minutes = Math.floor((user.hours * 59) % 60);
 		const hours = Math.floor(user.hours);
-		const username = await interaction.guild.members.fetch(user.user_id);
+		let username;
+		try{
+			username = await interaction.guild.members.fetch(user.user_id);
+		} catch {
+			username = 'UNKNOWN USER';
+		}
 		i++;
 		leaderboard.push(`#${i}:${username}\t\t\t${hours} hours,\t${minutes} minutes,\t${seconds} seconds\n`);
 	}	
