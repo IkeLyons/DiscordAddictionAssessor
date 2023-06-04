@@ -1,8 +1,14 @@
-const { Client, Intents } = require("discord.js");
+const { Client, Intents, ReactionCollector } = require("discord.js");
 const ConnectionManager = require("./ConnectionManager.js")
 const { token } = require("./config.json");
 
-const client = new Client({ intents: [Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_INTEGRATIONS] });
+const client = new Client({ intents: [
+	Intents.FLAGS.GUILD_VOICE_STATES,
+	Intents.FLAGS.GUILDS,
+	Intents.FLAGS.GUILD_MESSAGES,
+	Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+	Intents.FLAGS.GUILD_INTEGRATIONS
+]});
 
 client.once("ready", () => {
 	console.log("Starting up Discord Addiction Assessor!");
@@ -24,6 +30,24 @@ function getUserFromMention(mention) {
 	}
 }
 
+function paginate(array, page_size, page_number) {
+	return array.slice((page_number - 1) * page_size, page_number * page_size).join("");
+}
+
+const time = 60000;
+const emojiNext = '➡️';
+const emojiPrevious = '⬅️';
+const reactionArrows = [emojiPrevious, emojiNext];
+
+function onCollect(emoji, message, i, pages) {
+	if ((emoji.name === emojiPrevious) && (i > 0)) {
+	 	message.edit(pages[--i]);
+	} else if ((emoji.name === emojiNext) && (i < pages.length-1)) {
+	  	message.edit(pages[++i]);
+	}
+	return i;
+}
+
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isCommand()) return;
 	const { commandName } = interaction;
@@ -32,9 +56,29 @@ client.on("interactionCreate", async (interaction) => {
 		currentCons.refreshAll();
 
 		const response = await currentCons.getLeaderboardResponse(interaction);
+		paginatedResponse = []
+		for(let i = 1; i*5 <= response.length+5; i++){
+			paginatedResponse.push(paginate(response, 5, i));
+		}
 
-		await interaction.reply("heres the board!\n" + response);
+		const m = await interaction.reply({
+			content: "Heres the board! React to view other pages.\n" + paginatedResponse[0],
+			fetchReply: true
+		});
+		const collectorFilter = (reaction, user) => {
+			return !user.bot && reactionArrows.includes(reaction.emoji.name);
+		}
+		m.react(emojiPrevious);
+		m.react(emojiNext);
+		const collector = m.createReactionCollector({ filter: collectorFilter, time: time });
 
+		let collectorPage = 0;
+		collector.on('collect', (reaction, user) => {
+			collectorPage = onCollect(reaction.emoji, m, collectorPage, paginatedResponse)
+		});
+		collector.on('end', collected => {
+			console.log(`Collected ${collected.size} items`);
+		});
 	}
 	else if (commandName === "time") {
 		const option = interaction.options.get("username");

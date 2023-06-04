@@ -39,9 +39,7 @@ class ConnectionManager {
 	    	this.pool.query(`UPDATE time_spent SET hours=${updatedTime} WHERE(user_id=${userId} AND server_id=${serverId})`, (err) => {
 	    		console.log(err);
 	    	});
-			console.log(this.connected);
 	    	delete this.connected[userId];
-			console.log(this.connected);
 	    }
     }
     
@@ -81,24 +79,33 @@ class ConnectionManager {
 	}
 
 	async getLeaderboardResponse(interaction){
-		const response = await this.pool.query(`SELECT user_id, server_id, hours FROM time_spent WHERE(server_id=${interaction.guild.id})ORDER BY hours DESC LIMIT 5`);
-		
-		let leaderboard = "";
-		let i = 0;
-		for (const user of response.rows) {
-			i++;
-			const seconds = Math.floor((user.hours * 60 * 60) % 60);
-			const minutes = Math.floor((user.hours * 60) % 60);
-			const hours = Math.floor(user.hours);
-			const username = await interaction.guild.members.fetch(user.user_id);
-			leaderboard = leaderboard + `#${i}:${username}\t\t\t${hours} hours,\t${minutes} minutes,\t${seconds} seconds\n`;
-		}	
-		return leaderboard;
+		const response = await this.pool.query(`SELECT user_id, server_id, hours FROM time_spent WHERE(server_id=${interaction.guild.id})ORDER BY hours DESC LIMIT 15`);
+		const leaderboardList = await processLeaderboardResponse(response, interaction);
+		return leaderboardList;
 	}
 
 	isUserConnected(userId){
 		return userId in this.connected;
 	}
+}
+
+async function processLeaderboardResponse(response, interaction){
+	let leaderboard = []
+	let i = 0;
+	for (const user of response.rows) {
+		const seconds = Math.floor((user.hours * 59 * 60) % 60);
+		const minutes = Math.floor((user.hours * 59) % 60);
+		const hours = Math.floor(user.hours);
+		let username;
+		try{
+			username = await interaction.guild.members.fetch(user.user_id);
+		} catch {
+			username = 'UNKNOWN USER';
+		}
+		i++;
+		leaderboard.push(`#${i}:${username}\t\t\t${hours} hours,\t${minutes} minutes,\t${seconds} seconds\n`);
+	}	
+	return leaderboard;
 }
 
 module.exports = ConnectionManager;
