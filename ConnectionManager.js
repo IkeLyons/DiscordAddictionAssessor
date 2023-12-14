@@ -16,20 +16,23 @@ class ConnectionManager {
     }
 
     addUser(userId, serverId) {
+	var voiceManager = discord.GetVoiceManager();
     	const currentTime = new Date();
-        this.pool.query(`SELECT * FROM time_spent WHERE(user_id=${userId} AND server_id=${serverId})`, (err, res) => {
-		    console.log(err);
-		    if (res.rowCount === 0) {
-		    	this.pool.query(`INSERT INTO time_spent (user_id, server_id, hours) VALUES (${userId}, ${serverId}, 0)`, (err2, res2) => {
-		    		console.log(err2, res2);
-		    	});
-		    } else if (res.rowCount === 1) {
-		    	this.connected[userId] = [res.rows[0].hours, currentTime, serverId];
-		    } else {
+	if(!voiceManager.IsSelfMute()){ //added bool for mute check, if muted then their db row is not updated
+        	this.pool.query(`SELECT * FROM time_spent WHERE(user_id=${userId} AND server_id=${serverId})`, (err, res) => {
+		    	console.log(err);
+		    	if (res.rowCount === 0) {
+		    		this.pool.query(`INSERT INTO time_spent (user_id, server_id, hours) VALUES (${userId}, ${serverId}, 0)`, (err2, res2) => {
+		    			console.log(err2, res2);
+		    		});
+		    	} else if (res.rowCount === 1) {
+		    		this.connected[userId] = [res.rows[0].hours, currentTime, serverId];
+		    	} else {
 		    	console.log('Duplicate Entry, Something went wrong');
 		    	return;
-		    }
-	    });
+		    	}
+	    	});
+	}
     }
 
     deleteUser(userId, serverId){
