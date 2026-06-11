@@ -1,16 +1,14 @@
-const { dbUser, dbHost, dbDatabase, dbPassword, dbPort } = require("./config.json");
 const DBClient = require("pg");
 
-// Manages all of the currently connected users and handles the retreiving of their data from the db
 class ConnectionManager {
     constructor() {
         this.connected = {}
         this.pool = new DBClient.Pool({
-            user: dbUser,
-	        host: dbHost,
-	        database: dbDatabase,
-	        password: dbPassword,
-	        port: dbPort
+            user: process.env.DB_USER,
+            host: process.env.DB_HOST,
+            database: process.env.DB_DATABASE,
+            password: process.env.DB_PASSWORD,
+            port: process.env.DB_PORT,
         });
         this.pool.connect();
     }

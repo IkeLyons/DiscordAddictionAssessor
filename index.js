@@ -1,6 +1,7 @@
 const { Client, Intents, ReactionCollector } = require("discord.js");
 const ConnectionManager = require("./ConnectionManager.js")
-const { token } = require("./config.json");
+
+const token = process.env.DISCORD_TOKEN;
 
 const client = new Client({ intents: [
 	Intents.FLAGS.GUILD_VOICE_STATES,

@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "description": "Discord bot meant to give a leaderboard of time spent in voice channels",
   "main": "index.js",
+  "bin": {
+    "addiction-assessor": "./index.js"
+  },
   "author": "Ike Lyons",
   "license": "MIT",
   "dependencies": {
