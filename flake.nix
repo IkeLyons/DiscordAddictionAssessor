@@ -49,7 +49,7 @@
 
         dbName = lib.mkOption {
           type = lib.types.str;
-          default = "discord_bot";
+          default = "discord-bot";
           description = "PostgreSQL database name";
         };
 
